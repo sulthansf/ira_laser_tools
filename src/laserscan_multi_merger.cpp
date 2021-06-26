@@ -9,7 +9,7 @@
 #include <pcl/io/pcd_io.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h> 
+#include <sensor_msgs/point_cloud_conversion.h>
 #include "sensor_msgs/LaserScan.h"
 #include "pcl_ros/point_cloud.h"
 #include <Eigen/Dense>
@@ -74,17 +74,23 @@ void LaserscanMerger::laserscan_topic_parser()
 	ros::master::V_TopicInfo topics;
 	ros::master::getTopics(topics);
 
-    istringstream iss(laserscan_topics);
+  istringstream iss(laserscan_topics);
 	vector<string> tokens;
 	copy(istream_iterator<string>(iss), istream_iterator<string>(), back_inserter<vector<string> >(tokens));
 	vector<string> tmp_input_topics;
-	for(int i=0;i<tokens.size();++i)
-	{
-        for(int j=0;j<topics.size();++j)
+
+  while(tmp_input_topics.size() != tokens.size()) {
+		ROS_INFO("TRYING TO MATCH TOPICS BETWEEN ROS MASTER AND GIVEN TOPICS");
+		ros::Duration(1.0).sleep();
+		ros::master::getTopics(topics);
+		for(int i=0;i<tokens.size();++i)
 		{
-			if( (tokens[i].compare(topics[j].name) == 0) && (topics[j].datatype.compare("sensor_msgs/LaserScan") == 0) )
+			for(int j=0;j<topics.size();++j)
 			{
-				tmp_input_topics.push_back(topics[j].name);
+				if( (tokens[i].compare(topics[j].name) == 0) && (topics[j].datatype.compare("sensor_msgs/LaserScan") == 0) )
+				{
+					tmp_input_topics.push_back(topics[j].name);
+				}
 			}
 		}
 	}
@@ -164,7 +170,7 @@ void LaserscanMerger::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan,
 			pcl_conversions::toPCL(tmpCloud3, clouds[i]);
 			clouds_modified[i] = true;
 		}
-	}	
+	}
 
     // Count how many scans we have
 	int totalClouds = 0;
@@ -183,7 +189,7 @@ void LaserscanMerger::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan,
 			pcl::concatenatePointCloud(merged_cloud, clouds[i], merged_cloud);
 			clouds_modified[i] = false;
 		}
-	
+
 		point_cloud_publisher_.publish(merged_cloud);
 
 		Eigen::MatrixXf points;
